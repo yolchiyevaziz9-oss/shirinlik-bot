@@ -1,7 +1,7 @@
 const { Telegraf, Markup } = require('telegraf');
 
-const bot = new Telegraf('8665729423:AAGWZ6elXAEUIi_P1sTlbyTO_4EFzqasYBA');
-const ADMIN_ID = 5947540122;
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const ADMIN_ID = parseInt(process.env.ADMIN_ID);
 
 // =====================
 // DATABASE (xotira)
