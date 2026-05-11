@@ -1,3 +1,8 @@
+const express = require('express');
+const path = require('path');
+const app = express();
+app.use(express.static(path.join(__dirname, 'public')));
+app.listen(process.env.PORT || 3000);
 const { Telegraf, Markup } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -173,7 +178,11 @@ function getUserOrders(userId) {
 // =====================
 // TIL TANLASH
 // =====================
-bot.start((ctx) => {
+bot.start((ctx) => {ctx.reply('📱 Mini App orqali buyurtma bering:', 
+    Markup.inlineKeyboard([
+      [Markup.button.webApp('🛍 Menyuni ochish', 'https://shirinlik-bot.onrender.com')]
+    ])
+  );
   users[ctx.from.id] = { lang: null, step: 'lang', order: {}, custom: {} };
   ctx.reply('🌐 Tilni tanlang / Выберите язык / Choose language:',
     Markup.keyboard([["🇺🇿 O'zbek", '🇷🇺 Русский', '🇬🇧 English']]).resize()
