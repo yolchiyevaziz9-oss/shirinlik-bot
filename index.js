@@ -597,7 +597,10 @@ function finishOrder(ctx, id) {
   users[id] = { lang, step: null, order: {}, custom: {} };
   setTimeout(() => mainMenu(ctx), 1500);
 }
-
+const express = require('express');
+const app = express();
+app.get('/', (req, res) => res.send('Bot ishlayapti!'));
+app.listen(process.env.PORT || 3000);
 bot.launch();
 console.log('✅ Bot ishga tushdi!');
 process.once('SIGINT', () => bot.stop('SIGINT'));
