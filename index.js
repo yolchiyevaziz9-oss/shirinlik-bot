@@ -3,26 +3,24 @@ const path = require('path');
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.listen(process.env.PORT || 3000);
+
 const { Telegraf, Markup } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = parseInt(process.env.ADMIN_ID);
 
-// =====================
-// DATABASE (xotira)
-// =====================
-let orders = [];       // barcha buyurtmalar
-let orderCounter = 1;  // buyurtma raqami
-let users = {};        // foydalanuvchilar
+const MINIAPP_URL = 'https://shirinlik-bot.onrender.com';
 
-// =====================
-// PROGRESS BAR
-// =====================
+let orders = [];
+let orderCounter = 1;
+let users = {};
+
 function progressBar(current, total) {
   let bar = '';
   for (let i = 1; i <= total; i++) bar += i <= current ? '🟩' : '⬛';
   return bar;
 }
+
 function sendStep(ctx, stepNum, stepKey, lang, buttons) {
   const s = STEPS[stepKey][lang];
   const header = `🎂 TORT USTASI — ${stepNum}/8\n${progressBar(stepNum, 8)}\n\n${s.emoji} ${s.title}\n\n${s.hint}`;
@@ -30,9 +28,6 @@ function sendStep(ctx, stepNum, stepKey, lang, buttons) {
   return ctx.reply(header, Markup.removeKeyboard());
 }
 
-// =====================
-// TILLAR
-// =====================
 const LANG = {
   uz: {
     welcome: `🍰 Xush kelibsiz!\n\nBiz eng mazali shirinliklarni tayyorlaymiz! 🎂\n\nQuyidan bo'limni tanlang:`,
@@ -46,6 +41,8 @@ const LANG = {
     orderSent: '✅ Buyurtmangiz qabul qilindi!\nTez orada operator bog\'lanadi. Rahmat! 🙏',
     contactText: '📞 Aloqa:\n\n👤 Admin: @admin_username\n📱 Tel: +998901234567\n\n⏰ Ish vaqti: 08:00 - 20:00',
     sendLocation: '📍 Lokatsiya yuborish', or: 'yoki manzilni yozing',
+    miniapp: '📱 Mini App orqali buyurtma bering:',
+    openMenu: '🛍 Menyuni ochish',
   },
   ru: {
     welcome: `🍰 Добро пожаловать!\n\nМы готовим самые вкусные сладости! 🎂\n\nВыберите раздел:`,
@@ -59,6 +56,8 @@ const LANG = {
     orderSent: '✅ Ваш заказ принят!\nОператор свяжется с вами. Спасибо! 🙏',
     contactText: '📞 Контакт:\n\n👤 Admin: @admin_username\n📱 Тел: +998901234567\n\n⏰ Время работы: 08:00 - 20:00',
     sendLocation: '📍 Отправить геолокацию', or: 'или напишите адрес',
+    miniapp: '📱 Сделайте заказ через Mini App:',
+    openMenu: '🛍 Открыть меню',
   },
   en: {
     welcome: `🍰 Welcome!\n\nWe make the most delicious sweets! 🎂\n\nChoose a section:`,
@@ -72,12 +71,11 @@ const LANG = {
     orderSent: '✅ Order accepted!\nOperator will contact you soon. Thank you! 🙏',
     contactText: '📞 Contact:\n\n👤 Admin: @admin_username\n📱 Phone: +998901234567\n\n⏰ Hours: 08:00 - 20:00',
     sendLocation: '📍 Send location', or: 'or type address',
+    miniapp: '📱 Order via Mini App:',
+    openMenu: '🛍 Open Menu',
   }
 };
 
-// =====================
-// MAHSULOTLAR
-// =====================
 const PRODUCTS = {
   tort: [
     { id: 't1', name: { uz: '🎂 Klassik Oq Tort', ru: '🎂 Классический белый торт', en: '🎂 Classic White Cake' }, price: 190000, desc: { uz: 'Oq biskivit, qaymoq krem. 1kg = 190 000 so\'m', ru: 'Белый бисквит, сливочный крем. 1кг = 190 000 сум', en: 'White sponge, whipped cream. 1kg = 190 000 sum' } },
@@ -127,31 +125,25 @@ const CUSTOM = {
 };
 
 const STEPS = {
-  biskivit: { uz: { title: 'Qaysi biskivitni tanlaymiz?', emoji: '🍞', hint: 'Tortning asosi — eng muhim qadam!' }, ru: { title: 'Какой бисквит?', emoji: '🍞', hint: 'Основа торта!' }, en: { title: 'Which sponge?', emoji: '🍞', hint: 'The base of your cake!' } },
+  biskivit: { uz: { title: 'Qaysi biskivitni tanlaymiz?', emoji: '🍞', hint: 'Tortning asosi!' }, ru: { title: 'Какой бисквит?', emoji: '🍞', hint: 'Основа торта!' }, en: { title: 'Which sponge?', emoji: '🍞', hint: 'The base!' } },
   qavat: { uz: { title: 'Necha qavatli?', emoji: '🏗', hint: '💡 1 qavat=1.5-2kg | 2 qavat=3-4kg | 3 qavat=5-7kg' }, ru: { title: 'Сколько ярусов?', emoji: '🏗', hint: '💡 1=1.5-2кг | 2=3-4кг | 3=5-7кг' }, en: { title: 'How many tiers?', emoji: '🏗', hint: '💡 1=1.5-2kg | 2=3-4kg | 3=5-7kg' } },
   kg: { uz: { title: 'Taxminiy og\'irlik (kg)?', emoji: '⚖️', hint: '💰 1kg = 190 000 so\'m\nRaqam yozing, masalan: 2' }, ru: { title: 'Примерный вес (кг)?', emoji: '⚖️', hint: '💰 1кг = 190 000 сум\nНапример: 2' }, en: { title: 'Approximate weight (kg)?', emoji: '⚖️', hint: '💰 1kg = 190 000 sum\nE.g. 2' } },
-  nachinka: { uz: { title: 'Ichiga qanday nachinka?', emoji: '🍒', hint: 'Tortning yuragi — mazali tanlang!' }, ru: { title: 'Какая начинка?', emoji: '🍒', hint: 'Сердце торта!' }, en: { title: 'What filling?', emoji: '🍒', hint: 'The heart of the cake!' } },
-  krem: { uz: { title: 'Qaysi krem?', emoji: '🤍', hint: 'Yumshoqlikni siz tanlaysiz!' }, ru: { title: 'Какой крем?', emoji: '🤍', hint: 'Нежность в ваших руках!' }, en: { title: 'Which cream?', emoji: '🤍', hint: 'Choose your cream!' } },
-  bezak: { uz: { title: 'Ustki bezak?', emoji: '🎀', hint: 'Tortingizni chiroyli qilamiz!' }, ru: { title: 'Украшение?', emoji: '🎀', hint: 'Сделаем торт красивым!' }, en: { title: 'Decoration?', emoji: '🎀', hint: 'Make it beautiful!' } },
-  yozuv: { uz: { title: 'Tortga yozuv?', emoji: '✏️', hint: 'Masalan: "Dilnoza 25 yosh 🎉"\nyoki "Kerak emas" deb yozing' }, ru: { title: 'Надпись на торте?', emoji: '✏️', hint: 'Например: "С днём рождения! 🎉"\nили напишите "Нет"' }, en: { title: 'Text on cake?', emoji: '✏️', hint: 'E.g. "Happy Birthday! 🎉"\nor write "No"' } },
+  nachinka: { uz: { title: 'Ichiga qanday nachinka?', emoji: '🍒', hint: 'Tortning yuragi!' }, ru: { title: 'Какая начинка?', emoji: '🍒', hint: 'Сердце торта!' }, en: { title: 'What filling?', emoji: '🍒', hint: 'The heart!' } },
+  krem: { uz: { title: 'Qaysi krem?', emoji: '🤍', hint: 'Yumshoqlikni siz tanlaysiz!' }, ru: { title: 'Какой крем?', emoji: '🤍', hint: 'Нежность в руках!' }, en: { title: 'Which cream?', emoji: '🤍', hint: 'Choose!' } },
+  bezak: { uz: { title: 'Ustki bezak?', emoji: '🎀', hint: 'Tortingizni chiroyli qilamiz!' }, ru: { title: 'Украшение?', emoji: '🎀', hint: 'Красиво!' }, en: { title: 'Decoration?', emoji: '🎀', hint: 'Make it beautiful!' } },
+  yozuv: { uz: { title: 'Tortga yozuv?', emoji: '✏️', hint: 'Masalan: "Dilnoza 25 yosh 🎉"\nyoki "Kerak emas" deb yozing' }, ru: { title: 'Надпись на торте?', emoji: '✏️', hint: 'Например: "С днём рождения!"\nили "Нет"' }, en: { title: 'Text on cake?', emoji: '✏️', hint: 'E.g. "Happy Birthday!"\nor "No"' } },
   sana: { uz: { title: 'Qachon kerak?', emoji: '📅', hint: 'Sana va vaqtni yozing\nMasalan: 15-may soat 14:00' }, ru: { title: 'Когда нужен?', emoji: '📅', hint: 'Дата и время\nНапример: 15 мая в 14:00' }, en: { title: 'When do you need it?', emoji: '📅', hint: 'Date and time\nE.g. May 15 at 14:00' } },
 };
 
-// =====================
-// BUYURTMA HOLATLARI
-// =====================
 const ORDER_STATUS = {
-  new:        { uz: '🆕 Yangi', ru: '🆕 Новый', en: '🆕 New' },
-  confirmed:  { uz: '✅ Tasdiqlandi', ru: '✅ Подтверждён', en: '✅ Confirmed' },
-  preparing:  { uz: '👨‍🍳 Tayyorlanmoqda', ru: '👨‍🍳 Готовится', en: '👨‍🍳 Preparing' },
-  ready:      { uz: '📦 Tayyor, yetkazilmoqda', ru: '📦 Готов, доставляется', en: '📦 Ready, delivering' },
-  delivered:  { uz: '🎉 Yetkazildi!', ru: '🎉 Доставлен!', en: '🎉 Delivered!' },
-  cancelled:  { uz: '❌ Bekor qilindi', ru: '❌ Отменён', en: '❌ Cancelled' },
+  new:       { uz: '🆕 Yangi', ru: '🆕 Новый', en: '🆕 New' },
+  confirmed: { uz: '✅ Tasdiqlandi', ru: '✅ Подтверждён', en: '✅ Confirmed' },
+  preparing: { uz: '👨‍🍳 Tayyorlanmoqda', ru: '👨‍🍳 Готовится', en: '👨‍🍳 Preparing' },
+  ready:     { uz: '📦 Yetkazilmoqda', ru: '📦 Доставляется', en: '📦 Delivering' },
+  delivered: { uz: '🎉 Yetkazildi!', ru: '🎉 Доставлен!', en: '🎉 Delivered!' },
+  cancelled: { uz: '❌ Bekor qilindi', ru: '❌ Отменён', en: '❌ Cancelled' },
 };
 
-// =====================
-// HELPERS
-// =====================
 function getUser(id) {
   if (!users[id]) users[id] = { lang: null, step: null, order: {}, custom: {} };
   return users[id];
@@ -165,36 +157,32 @@ function mainMenu(ctx) {
   const id = ctx.from.id;
   const lang = getUser(id).lang || 'uz';
   const L = LANG[lang];
-  return ctx.reply(L.welcome, Markup.keyboard([
+  ctx.reply(L.welcome, Markup.keyboard([
     [L.catalog, L.customTort],
     [L.myOrders, L.review],
     [L.contact]
   ]).resize());
+  ctx.reply(L.miniapp, Markup.inlineKeyboard([
+    [Markup.button.webApp(L.openMenu, MINIAPP_URL)]
+  ]));
 }
 function getUserOrders(userId) {
   return orders.filter(o => o.userId === userId);
 }
 
-// =====================
 // TIL TANLASH
-// =====================
-bot.start((ctx) => {ctx.reply('📱 Mini App orqali buyurtma bering:', 
-    Markup.inlineKeyboard([
-      [Markup.button.webApp('🛍 Menyuni ochish', 'https://shirinlik-bot.onrender.com')]
-    ])
-  );
+bot.start((ctx) => {
   users[ctx.from.id] = { lang: null, step: 'lang', order: {}, custom: {} };
   ctx.reply('🌐 Tilni tanlang / Выберите язык / Choose language:',
     Markup.keyboard([["🇺🇿 O'zbek", '🇷🇺 Русский', '🇬🇧 English']]).resize()
   );
 });
+
 bot.hears("🇺🇿 O'zbek", (ctx) => { const u = getUser(ctx.from.id); u.lang = 'uz'; u.step = null; mainMenu(ctx); });
 bot.hears('🇷🇺 Русский', (ctx) => { const u = getUser(ctx.from.id); u.lang = 'ru'; u.step = null; mainMenu(ctx); });
 bot.hears('🇬🇧 English', (ctx) => { const u = getUser(ctx.from.id); u.lang = 'en'; u.step = null; mainMenu(ctx); });
 
-// =====================
 // KATALOG
-// =====================
 ['🗂 Katalog', '🗂 Каталог', '🗂 Catalog'].forEach(txt => {
   bot.hears(txt, (ctx) => {
     const id = ctx.from.id;
@@ -236,9 +224,7 @@ bot.action(/^order_(.+)_(.+)$/, (ctx) => {
   ctx.reply(L.box, Markup.keyboard([[L.boxYes, L.boxNo]]).resize());
 });
 
-// =====================
 // MAXSUS TORT
-// =====================
 ['🎨 Maxsus Tort Zakaz', '🎨 Торт на заказ', '🎨 Custom Cake'].forEach(txt => {
   bot.hears(txt, (ctx) => {
     const id = ctx.from.id;
@@ -257,57 +243,34 @@ bot.action(/^order_(.+)_(.+)$/, (ctx) => {
   });
 });
 
-// =====================
 // BUYURTMALARIM
-// =====================
 ['📦 Buyurtmalarim', '📦 Мои заказы', '📦 My Orders'].forEach(txt => {
   bot.hears(txt, (ctx) => {
     const id = ctx.from.id;
     const lang = getUser(id).lang || 'uz';
     const myOrders = getUserOrders(id);
-
     if (myOrders.length === 0) {
       const msg = { uz: '📭 Sizda hali buyurtma yo\'q.', ru: '📭 У вас пока нет заказов.', en: '📭 You have no orders yet.' };
       return ctx.reply(msg[lang]);
     }
-
     const title = { uz: '📦 SIZNING BUYURTMALARINGIZ:', ru: '📦 ВАШИ ЗАКАЗЫ:', en: '📦 YOUR ORDERS:' };
     let text = `${title[lang]}\n\n`;
-
     myOrders.slice(-5).forEach(o => {
       const status = ORDER_STATUS[o.status]?.[lang] || o.status;
-      text += `🔖 #${o.id} — ${o.productName}\n📊 Holat: ${status}\n📅 ${o.date}\n\n`;
+      text += `🔖 #${o.id} — ${o.productName}\n📊 ${status}\n📅 ${o.date}\n\n`;
     });
-
     ctx.reply(text);
   });
 });
 
-// =====================
-// IZOH QOLDIRISH
-// =====================
+// IZOH
 ['⭐ Izoh qoldirish', '⭐ Оставить отзыв', '⭐ Leave a review'].forEach(txt => {
   bot.hears(txt, (ctx) => {
     const id = ctx.from.id;
     const lang = getUser(id).lang || 'uz';
     const u = getUser(id);
-    const myOrders = getUserOrders(id).filter(o => o.status === 'delivered');
-
-    if (myOrders.length === 0) {
-      const msg = {
-        uz: '⭐ Izoh qoldirish uchun avval buyurtma olishingiz kerak 😊',
-        ru: '⭐ Чтобы оставить отзыв, сначала получите заказ 😊',
-        en: '⭐ You need to receive an order first to leave a review 😊'
-      };
-      return ctx.reply(msg[lang]);
-    }
-
     u.step = 'review_rating';
-    const msg = {
-      uz: '⭐ IZOH QOLDIRISH\n\nQuyidagi reytingdan birini tanlang:',
-      ru: '⭐ ОСТАВИТЬ ОТЗЫВ\n\nВыберите оценку:',
-      en: '⭐ LEAVE A REVIEW\n\nChoose your rating:',
-    };
+    const msg = { uz: '⭐ Reytingni tanlang:', ru: '⭐ Выберите оценку:', en: '⭐ Choose rating:' };
     ctx.reply(msg[lang], Markup.keyboard([
       ['⭐ 1', '⭐⭐ 2', '⭐⭐⭐ 3'],
       ['⭐⭐⭐⭐ 4', '⭐⭐⭐⭐⭐ 5'],
@@ -316,45 +279,21 @@ bot.action(/^order_(.+)_(.+)$/, (ctx) => {
   });
 });
 
-// =====================
 // ALOQA
-// =====================
 ['📞 Aloqa', '📞 Контакт', '📞 Contact'].forEach(txt => {
   bot.hears(txt, (ctx) => ctx.reply(LANG[getUser(ctx.from.id).lang || 'uz'].contactText));
 });
 ['⬅️ Orqaga', '⬅️ Назад', '⬅️ Back'].forEach(txt => bot.hears(txt, ctx => mainMenu(ctx)));
 
-// =====================
 // ADMIN PANEL
-// =====================
 bot.command('admin', (ctx) => {
   if (ctx.from.id !== ADMIN_ID) return ctx.reply('❌ Ruxsat yo\'q!');
-
   const today = new Date().toLocaleDateString('uz-UZ');
   const todayOrders = orders.filter(o => o.date === today);
   const totalRevenue = todayOrders.reduce((sum, o) => sum + (o.price || 0), 0);
-
   const statusCount = {};
-  Object.keys(ORDER_STATUS).forEach(s => {
-    statusCount[s] = orders.filter(o => o.status === s).length;
-  });
-
-  const text = `📊 ADMIN PANEL
-━━━━━━━━━━━━━━━━
-📅 Bugun: ${today}
-📦 Bugungi buyurtmalar: ${todayOrders.length} ta
-💰 Taxminiy tushum: ${totalRevenue.toLocaleString()} so'm
-━━━━━━━━━━━━━━━━
-📈 JAMI STATISTIKA:
-🆕 Yangi: ${statusCount.new || 0}
-✅ Tasdiqlangan: ${statusCount.confirmed || 0}
-👨‍🍳 Tayyorlanmoqda: ${statusCount.preparing || 0}
-📦 Yetkazilmoqda: ${statusCount.ready || 0}
-🎉 Yetkazildi: ${statusCount.delivered || 0}
-❌ Bekor: ${statusCount.cancelled || 0}
-━━━━━━━━━━━━━━━━
-📋 Jami buyurtmalar: ${orders.length} ta`;
-
+  Object.keys(ORDER_STATUS).forEach(s => { statusCount[s] = orders.filter(o => o.status === s).length; });
+  const text = `📊 ADMIN PANEL\n━━━━━━━━━━━━━━━━\n📅 Bugun: ${today}\n📦 Bugungi buyurtmalar: ${todayOrders.length} ta\n💰 Taxminiy tushum: ${totalRevenue.toLocaleString()} so'm\n━━━━━━━━━━━━━━━━\n🆕 Yangi: ${statusCount.new||0}\n✅ Tasdiqlangan: ${statusCount.confirmed||0}\n👨‍🍳 Tayyorlanmoqda: ${statusCount.preparing||0}\n📦 Yetkazilmoqda: ${statusCount.ready||0}\n🎉 Yetkazildi: ${statusCount.delivered||0}\n❌ Bekor: ${statusCount.cancelled||0}\n━━━━━━━━━━━━━━━━\n📋 Jami: ${orders.length} ta`;
   ctx.reply(text, Markup.inlineKeyboard([
     [Markup.button.callback('📋 Oxirgi 5 buyurtma', 'admin_last5')],
     [Markup.button.callback('🆕 Yangi buyurtmalar', 'admin_new')],
@@ -378,27 +317,22 @@ bot.action('admin_new', (ctx) => {
   const newOrders = orders.filter(o => o.status === 'new');
   if (newOrders.length === 0) return ctx.reply('✅ Yangi buyurtmalar yo\'q.');
   let text = '🆕 YANGI BUYURTMALAR:\n\n';
-  newOrders.forEach(o => {
-    text += `🔖 #${o.id} — ${o.productName}\n👤 ${o.customerName} | 📞 ${o.phone}\n📅 ${o.date}\n`;
-    text += `/status_${o.id} — holatni o'zgartirish\n\n`;
-  });
+  newOrders.forEach(o => { text += `🔖 #${o.id} — ${o.productName}\n👤 ${o.customerName} | 📞 ${o.phone}\n/status_${o.id}\n\n`; });
   ctx.reply(text);
 });
 
-// Buyurtma holatini o'zgartirish
 bot.hears(/^\/status_(\d+)$/, (ctx) => {
   if (ctx.from.id !== ADMIN_ID) return;
   const orderId = parseInt(ctx.match[1]);
   const order = orders.find(o => o.id === orderId);
   if (!order) return ctx.reply('❌ Buyurtma topilmadi.');
-
-  ctx.reply(`🔖 Buyurtma #${orderId}\n👤 ${order.customerName}\n📊 Hozirgi holat: ${ORDER_STATUS[order.status]?.uz}\n\nYangi holatni tanlang:`,
+  ctx.reply(`🔖 #${orderId} — ${order.customerName}\nHozirgi: ${ORDER_STATUS[order.status]?.uz}`,
     Markup.inlineKeyboard([
       [Markup.button.callback('✅ Tasdiqlandi', `setstatus_${orderId}_confirmed`)],
       [Markup.button.callback('👨‍🍳 Tayyorlanmoqda', `setstatus_${orderId}_preparing`)],
       [Markup.button.callback('📦 Yetkazilmoqda', `setstatus_${orderId}_ready`)],
       [Markup.button.callback('🎉 Yetkazildi', `setstatus_${orderId}_delivered`)],
-      [Markup.button.callback('❌ Bekor qilindi', `setstatus_${orderId}_cancelled`)],
+      [Markup.button.callback('❌ Bekor', `setstatus_${orderId}_cancelled`)],
     ])
   );
 });
@@ -409,26 +343,15 @@ bot.action(/^setstatus_(\d+)_(.+)$/, (ctx) => {
   const orderId = parseInt(ctx.match[1]);
   const newStatus = ctx.match[2];
   const order = orders.find(o => o.id === orderId);
-  if (!order) return ctx.reply('❌ Buyurtma topilmadi.');
-
+  if (!order) return;
   order.status = newStatus;
-  const statusText = ORDER_STATUS[newStatus]?.uz;
-  ctx.reply(`✅ #${orderId} buyurtma holati o'zgartirildi: ${statusText}`);
-
-  // Mijozga xabar yuborish
+  ctx.reply(`✅ #${orderId} — ${ORDER_STATUS[newStatus]?.uz}`);
   const userLang = order.userLang || 'uz';
-  const notifyMsg = {
-    uz: `🔔 BUYURTMANGIZ YANGILANDI!\n\n🔖 Buyurtma #${orderId}\n🍰 ${order.productName}\n📊 Holat: ${ORDER_STATUS[newStatus]?.uz}\n\n${newStatus === 'delivered' ? '🎉 Buyurtmangiz yetib bordi! Yoqimli ishtaha! 🍰' : ''}`,
-    ru: `🔔 ВАШ ЗАКАЗ ОБНОВЛЁН!\n\n🔖 Заказ #${orderId}\n🍰 ${order.productName}\n📊 Статус: ${ORDER_STATUS[newStatus]?.ru}\n\n${newStatus === 'delivered' ? '🎉 Ваш заказ доставлен! Приятного аппетита! 🍰' : ''}`,
-    en: `🔔 YOUR ORDER UPDATED!\n\n🔖 Order #${orderId}\n🍰 ${order.productName}\n📊 Status: ${ORDER_STATUS[newStatus]?.en}\n\n${newStatus === 'delivered' ? '🎉 Your order is delivered! Enjoy! 🍰' : ''}`,
-  };
-
-  bot.telegram.sendMessage(order.userId, notifyMsg[userLang]).catch(() => {});
+  const msg = { uz: `🔔 Buyurtma #${orderId} yangilandi!\n📊 ${ORDER_STATUS[newStatus]?.uz}${newStatus==='delivered'?'\n\n🎉 Yoqimli ishtaha!':''}`, ru: `🔔 Заказ #${orderId} обновлён!\n📊 ${ORDER_STATUS[newStatus]?.ru}`, en: `🔔 Order #${orderId} updated!\n📊 ${ORDER_STATUS[newStatus]?.en}` };
+  bot.telegram.sendMessage(order.userId, msg[userLang]).catch(() => {});
 });
 
-// =====================
 // TEXT HANDLER
-// =====================
 bot.on('text', (ctx) => {
   const id = ctx.from.id;
   const u = getUser(id);
@@ -437,81 +360,50 @@ bot.on('text', (ctx) => {
   const text = ctx.message.text;
   const step = u.step;
 
-  // IZOH REYTING
   if (step === 'review_rating') {
-    u.order.reviewRating = text;
-    u.step = 'review_text';
-    const msg = {
-      uz: `${text} — ajoyib!\n\nEndi izohingizni yozing (xizmat, ta'm, yetkazish haqida):`,
-      ru: `${text} — отлично!\n\nНапишите ваш отзыв (о сервисе, вкусе, доставке):`,
-      en: `${text} — great!\n\nWrite your review (about service, taste, delivery):`,
-    };
+    u.order.reviewRating = text; u.step = 'review_text';
+    const msg = { uz: `${text} — ajoyib!\n\nIzohingizni yozing:`, ru: `${text} — отлично!\n\nНапишите отзыв:`, en: `${text} — great!\n\nWrite your review:` };
     return ctx.reply(msg[lang], Markup.removeKeyboard());
   }
-
   if (step === 'review_text') {
-    const rating = u.order.reviewRating || '';
-    const reviewText = text;
-    u.step = null;
-
-    // Adminga yuborish
-    const adminMsg = `⭐ YANGI IZOH!\n\n${rating}\n💬 "${reviewText}"\n\n👤 ${ctx.from.first_name} (@${ctx.from.username || 'yo\'q'})\n🆔 ID: ${id}`;
-    bot.telegram.sendMessage(ADMIN_ID, adminMsg).catch(() => {});
-
-    const thanks = {
-      uz: '🙏 Izohingiz uchun rahmat! Bu bizni yanada yaxshilashga yordam beradi ⭐',
-      ru: '🙏 Спасибо за отзыв! Это помогает нам стать лучше ⭐',
-      en: '🙏 Thank you for your review! It helps us improve ⭐',
-    };
+    bot.telegram.sendMessage(ADMIN_ID, `⭐ YANGI IZOH!\n${u.order.reviewRating}\n💬 "${text}"\n👤 ${ctx.from.first_name} (ID: ${id})`).catch(() => {});
+    const thanks = { uz: '🙏 Izohingiz uchun rahmat! ⭐', ru: '🙏 Спасибо за отзыв! ⭐', en: '🙏 Thank you for your review! ⭐' };
     ctx.reply(thanks[lang]);
+    u.step = null;
     return setTimeout(() => mainMenu(ctx), 1000);
   }
 
-  // MAXSUS TORT
   if (step === 'custom_biskivit') { u.custom.biskivit = text; u.step = 'custom_qavat'; return sendStep(ctx, 2, 'qavat', lang, CUSTOM.qavat[lang]); }
   if (step === 'custom_qavat') { u.custom.qavat = text; u.step = 'custom_kg'; return sendStep(ctx, 3, 'kg', lang, null); }
-
   if (step === 'custom_kg') {
     const kg = parseFloat(text);
     u.custom.kg = text;
     u.custom.taxminiyNarx = isNaN(kg) ? '—' : (kg * 190000).toLocaleString();
     u.step = 'custom_nachinka';
-    const msg = { uz: `💰 Ajoyib! Taxminiy narx: ${u.custom.taxminiyNarx} so'm\nDavom etamiz... 🔥`, ru: `💰 Отлично! Примерная цена: ${u.custom.taxminiyNarx} сум\nПродолжаем... 🔥`, en: `💰 Great! Est. price: ${u.custom.taxminiyNarx} sum\nLet's go... 🔥` };
+    const msg = { uz: `💰 Taxminiy narx: ${u.custom.taxminiyNarx} so'm 🔥`, ru: `💰 Примерная цена: ${u.custom.taxminiyNarx} сум 🔥`, en: `💰 Est. price: ${u.custom.taxminiyNarx} sum 🔥` };
     ctx.reply(msg[lang]);
     return setTimeout(() => sendStep(ctx, 4, 'nachinka', lang, CUSTOM.nachinka[lang]), 800);
   }
-
   if (step === 'custom_nachinka') { u.custom.nachinka = text; u.step = 'custom_krem'; return sendStep(ctx, 5, 'krem', lang, CUSTOM.krem[lang]); }
   if (step === 'custom_krem') { u.custom.krem = text; u.step = 'custom_bezak'; return sendStep(ctx, 6, 'bezak', lang, CUSTOM.bezak[lang]); }
   if (step === 'custom_bezak') { u.custom.bezak = text; u.step = 'custom_yozuv'; return sendStep(ctx, 7, 'yozuv', lang, null); }
   if (step === 'custom_yozuv') { u.custom.yozuv = text; u.step = 'custom_sana'; return sendStep(ctx, 8, 'sana', lang, null); }
-
   if (step === 'custom_sana') {
-    u.custom.sana = text;
-    u.step = 'custom_confirm';
+    u.custom.sana = text; u.step = 'custom_confirm';
     const c = u.custom;
-    const summary = {
-      uz: `🎉 TORTINGIZ TAYYOR!\n${progressBar(8, 8)} ✅\n\n━━━━━━━━━━━━━━━━\n🍞 Biskivit: ${c.biskivit}\n🏗 Qavat: ${c.qavat}\n⚖️ Og'irlik: ${c.kg} kg\n💰 Taxminiy: ${c.taxminiyNarx} so'm\n🍒 Nachinka: ${c.nachinka}\n🤍 Krem: ${c.krem}\n🎀 Bezak: ${c.bezak}\n✏️ Yozuv: ${c.yozuv}\n📅 Kerak: ${c.sana}\n━━━━━━━━━━━━━━━━\n\n🚀 Tasdiqlaysizmi?`,
-      ru: `🎉 ВАШ ТОРТ ГОТОВ!\n${progressBar(8, 8)} ✅\n\n━━━━━━━━━━━━━━━━\n🍞 Бисквит: ${c.biskivit}\n🏗 Ярусов: ${c.qavat}\n⚖️ Вес: ${c.kg} кг\n💰 Примерно: ${c.taxminiyNarx} сум\n🍒 Начинка: ${c.nachinka}\n🤍 Крем: ${c.krem}\n🎀 Украшение: ${c.bezak}\n✏️ Надпись: ${c.yozuv}\n📅 Нужен: ${c.sana}\n━━━━━━━━━━━━━━━━\n\n🚀 Подтверждаете?`,
-      en: `🎉 YOUR CAKE IS READY!\n${progressBar(8, 8)} ✅\n\n━━━━━━━━━━━━━━━━\n🍞 Sponge: ${c.biskivit}\n🏗 Tiers: ${c.qavat}\n⚖️ Weight: ${c.kg} kg\n💰 Est.: ${c.taxminiyNarx} sum\n🍒 Filling: ${c.nachinka}\n🤍 Cream: ${c.krem}\n🎀 Deco: ${c.bezak}\n✏️ Text: ${c.yozuv}\n📅 Needed: ${c.sana}\n━━━━━━━━━━━━━━━━\n\n🚀 Confirm?`,
-    };
+    const summary = { uz: `🎉 TORTINGIZ TAYYOR!\n${progressBar(8,8)} ✅\n\n🍞 ${c.biskivit}\n🏗 ${c.qavat}\n⚖️ ${c.kg} kg\n💰 ~${c.taxminiyNarx} so'm\n🍒 ${c.nachinka}\n🤍 ${c.krem}\n🎀 ${c.bezak}\n✏️ ${c.yozuv}\n📅 ${c.sana}\n\n🚀 Tasdiqlaysizmi?`, ru: `🎉 ВАШ ТОРТ ГОТОВ!\n${progressBar(8,8)} ✅\n\n🍞 ${c.biskivit}\n🏗 ${c.qavat}\n⚖️ ${c.kg} кг\n💰 ~${c.taxminiyNarx} сум\n🍒 ${c.nachinka}\n🤍 ${c.krem}\n🎀 ${c.bezak}\n✏️ ${c.yozuv}\n📅 ${c.sana}\n\n🚀 Подтверждаете?`, en: `🎉 YOUR CAKE IS READY!\n${progressBar(8,8)} ✅\n\n🍞 ${c.biskivit}\n🏗 ${c.qavat}\n⚖️ ${c.kg} kg\n💰 ~${c.taxminiyNarx} sum\n🍒 ${c.nachinka}\n🤍 ${c.krem}\n🎀 ${c.bezak}\n✏️ ${c.yozuv}\n📅 ${c.sana}\n\n🚀 Confirm?` };
     const btn = { uz: ['✅ Tasdiqlash', '🔄 Qayta boshlash'], ru: ['✅ Подтвердить', '🔄 Начать заново'], en: ['✅ Confirm', '🔄 Start over'] };
     return ctx.reply(summary[lang], Markup.keyboard([btn[lang], [L.back]]).resize());
   }
-
   if (step === 'custom_confirm') {
     const yes = { uz: '✅ Tasdiqlash', ru: '✅ Подтвердить', en: '✅ Confirm' };
     const no = { uz: '🔄 Qayta boshlash', ru: '🔄 Начать заново', en: '🔄 Start over' };
     if (text === no[lang]) { u.step = null; u.custom = {}; u.order = {}; return mainMenu(ctx); }
     if (text === yes[lang]) { u.step = 'box'; return ctx.reply(L.box, Markup.keyboard([[L.boxYes, L.boxNo]]).resize()); }
   }
-
   if (step === 'box') { u.order.box = (text === L.boxYes); u.step = 'ask_name'; return ctx.reply(L.askName, Markup.removeKeyboard()); }
   if (step === 'ask_name') { u.order.name = text; u.step = 'ask_phone'; return ctx.reply(L.askPhone); }
-  if (step === 'ask_phone') {
-    u.order.phone = text; u.step = 'ask_location';
-    return ctx.reply(`${L.askLocation}\n\n${L.or}`, Markup.keyboard([[Markup.button.locationRequest(L.sendLocation)]]).resize());
-  }
+  if (step === 'ask_phone') { u.order.phone = text; u.step = 'ask_location'; return ctx.reply(`${L.askLocation}\n\n${L.or}`, Markup.keyboard([[Markup.button.locationRequest(L.sendLocation)]]).resize()); }
   if (step === 'ask_location') { u.order.location = text; u.step = 'ask_payment'; return ctx.reply(L.askPayment, Markup.keyboard([[L.payNaqd], [L.payClick, L.payPayme]]).resize()); }
   if (step === 'ask_payment') { u.order.payment = text; return finishOrder(ctx, id); }
 });
@@ -529,87 +421,44 @@ bot.on('location', (ctx) => {
   }
 });
 
-// =====================
-// BUYURTMANI SAQLASH VA YAKUNLASH
-// =====================
+// Mini App dan kelgan buyurtma
+bot.on('web_app_data', (ctx) => {
+  try {
+    const data = JSON.parse(ctx.webAppData.data);
+    const id = ctx.from.id;
+    const lang = getUser(id).lang || 'uz';
+    const orderId = orderCounter++;
+    let productName = data.type === 'custom_tort' ? `Maxsus Tort (${data.biskivit})` : data.items?.map(i => i.name).join(', ') || 'Mahsulot';
+    const price = data.total || data.price || 0;
+    orders.push({ id: orderId, userId: id, userLang: lang, type: data.type, productName, customerName: ctx.from.first_name, phone: '—', location: '—', payment: '—', price, status: 'new', date: new Date().toLocaleDateString('uz-UZ') });
+    const adminText = `📬 MINI APP BUYURTMA #${orderId}!\n👤 ${ctx.from.first_name} (@${ctx.from.username||'—'}) ID: ${id}\n🛍 ${productName}\n💰 ${price.toLocaleString()} so'm\n/status_${orderId}`;
+    bot.telegram.sendMessage(ADMIN_ID, adminText).catch(() => {});
+    ctx.reply(`✅ Buyurtma #${orderId} qabul qilindi!\nTez orada bog'lanamiz. 🙏`);
+  } catch(e) {}
+});
+
 function finishOrder(ctx, id) {
   const u = getUser(id);
   const lang = u.lang || 'uz';
   const L = LANG[lang];
   const o = u.order;
   const c = u.custom;
-
   const today = new Date().toLocaleDateString('uz-UZ');
   const orderId = orderCounter++;
-
-  let productName = o.type === 'custom'
-    ? `Maxsus Tort (${c.biskivit}, ${c.kg}kg)`
-    : o.itemName;
-
-  // Buyurtmani saqlash
-  const newOrder = {
-    id: orderId,
-    userId: id,
-    userLang: lang,
-    type: o.type,
-    productName,
-    customerName: o.name,
-    phone: o.phone,
-    location: o.location,
-    payment: o.payment,
-    box: o.box,
-    price: o.type === 'custom' ? (parseFloat(c.kg) * 190000 || 0) : (o.price || 0),
-    status: 'new',
-    date: today,
-    custom: o.type === 'custom' ? { ...c } : null,
-  };
-  orders.push(newOrder);
-
-  let orderText = '';
-  if (o.type === 'custom') {
-    orderText = `🎨 MAXSUS TORT
-━━━━━━━━━━━━━━━━
-🍞 Biskivit: ${c.biskivit}
-🏗 Qavat: ${c.qavat}
-⚖️ Og'irlik: ${c.kg} kg
-💰 Taxminiy: ${c.taxminiyNarx} so'm
-🍒 Nachinka: ${c.nachinka}
-🤍 Krem: ${c.krem}
-🎀 Bezak: ${c.bezak}
-✏️ Yozuv: ${c.yozuv}
-📅 Kerak: ${c.sana}
-📦 Korobka: ${o.box ? '✅ Ha' : '❌ Yo\'q'}
-━━━━━━━━━━━━━━━━`;
-  } else {
-    orderText = `🛒 KATALOG BUYURTMA
-━━━━━━━━━━━━━━━━
-🍰 Mahsulot: ${o.itemName}
-💰 Narx: ${o.price?.toLocaleString()} so'm
-📦 Korobka: ${o.box ? '✅ Ha' : '❌ Yo\'q'}
-━━━━━━━━━━━━━━━━`;
-  }
-
-  const fullText = `📬 YANGI BUYURTMA #${orderId}!\n${orderText}
-👤 Ism: ${o.name}
-📞 Tel: ${o.phone}
-📍 Manzil: ${o.location}
-💳 To'lov: ${o.payment}
-👤 TG: @${ctx.from.username || 'yo\'q'} (ID: ${id})
-\n/status_${orderId} — holatni o'zgartirish`;
-
+  let productName = o.type === 'custom' ? `Maxsus Tort (${c.biskivit}, ${c.kg}kg)` : o.itemName;
+  orders.push({ id: orderId, userId: id, userLang: lang, type: o.type, productName, customerName: o.name, phone: o.phone, location: o.location, payment: o.payment, box: o.box, price: o.type==='custom' ? (parseFloat(c.kg)*190000||0) : (o.price||0), status: 'new', date: today, custom: o.type==='custom'?{...c}:null });
+  let orderText = o.type === 'custom'
+    ? `🎨 MAXSUS TORT\n━━━━━━━━━━━━━━━━\n🍞 ${c.biskivit}\n🏗 ${c.qavat}\n⚖️ ${c.kg} kg\n💰 ~${c.taxminiyNarx} so'm\n🍒 ${c.nachinka}\n🤍 ${c.krem}\n🎀 ${c.bezak}\n✏️ ${c.yozuv}\n📅 ${c.sana}\n📦 Korobka: ${o.box?'✅':'❌'}\n━━━━━━━━━━━━━━━━`
+    : `🛒 KATALOG\n━━━━━━━━━━━━━━━━\n🍰 ${o.itemName}\n💰 ${o.price?.toLocaleString()} so'm\n📦 Korobka: ${o.box?'✅':'❌'}\n━━━━━━━━━━━━━━━━`;
+  const fullText = `📬 YANGI BUYURTMA #${orderId}!\n${orderText}\n👤 ${o.name}\n📞 ${o.phone}\n📍 ${o.location}\n💳 ${o.payment}\n👤 @${ctx.from.username||'—'} (ID: ${id})\n\n/status_${orderId}`;
   bot.telegram.sendMessage(ADMIN_ID, fullText).catch(() => {});
-
   if (o.payment?.includes('Click')) ctx.reply('💳 Click:\nhttps://my.click.uz/services/YOUR_SERVICE_ID');
   else if (o.payment?.includes('Payme')) ctx.reply('💳 Payme:\nhttps://payme.uz/YOUR_MERCHANT_ID');
-
   ctx.reply(L.orderSent);
   users[id] = { lang, step: null, order: {}, custom: {} };
   setTimeout(() => mainMenu(ctx), 1500);
 }
-const express = require('express');
-const app = express();
-app.get('/', (req, res) => res.send('Bot ishlayapti!'));
-app.listen(process.env.PORT || 3000);
+
 bot.launch();
 console.log('✅ Bot ishga tushdi!');
 process.once('SIGINT', () => bot.stop('SIGINT'));
