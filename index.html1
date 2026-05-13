@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Yolchiyev's Bakery</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #1a1a1a; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+/* HEADER */
+.header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0ebe4; background: #fff; position: sticky; top: 0; z-index: 100; }
+.header h1 { font-size: 17px; font-weight: 700; color: #3b1f0a; }
+.header p { font-size: 11px; color: #999; }
+.header-icons { display: flex; gap: 12px; }
+.header-icons button { background: none; border: none; cursor: pointer; padding: 4px; }
+.header-icons svg { width: 22px; height: 22px; stroke: #555; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* CATEGORIES */
+.cats { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; }
+.cats::-webkit-scrollbar { display: none; }
+.cat { padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid #e0d6cc; color: #666; background: #fff; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.cat.active { background: #6b3f1f; color: #fff; border-color: #6b3f1f; }
+
+/* BANNER */
+.banner { margin: 4px 16px 14px; border-radius: 16px; background: linear-gradient(135deg, #4a2810, #7a4f2d); padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.banner-text h3 { color: #fff; font-size: 15px; font-weight: 700; }
+.banner-text p { color: #f0d9b5; font-size: 11px; margin-top: 3px; }
+.banner-tag { display: inline-block; margin-top: 8px; background: #c8860a; color: #fff; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 10px; }
+.banner-emoji { font-size: 60px; line-height: 1; }
+
+/* SECTION */
+.sec-title { padding: 0 16px 10px; font-size: 16px; font-weight: 700; color: #1a1a1a; }
+
+/* PRODUCTS GRID */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 100px; }
+.card { border-radius: 14px; overflow: hidden; border: 1px solid #ede8e1; background: #fff; cursor: pointer; transition: transform 0.15s; }
+.card:active { transform: scale(0.97); }
+.card-img { height: 120px; overflow: hidden; position: relative; background: #f5f0ea; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-tag { position: absolute; top: 7px; left: 7px; background: #c8860a; color: #fff; font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.card-body { padding: 9px 10px 11px; }
+.card-name { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
+.card-desc { font-size: 10px; color: #aaa; margin-bottom: 8px; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.price { font-size: 13px; font-weight: 700; color: #6b3f1f; }
+.add-btn { width: 28px; height: 28px; background: #6b3f1f; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.add-btn:active { background: #4a2810; }
+.add-btn svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+/* BOTTOM NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #fff; border-top: 1px solid #ede8e1; display: flex; padding: 8px 0 16px; z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px; }
+.nav-item svg { width: 22px; height: 22px; stroke: #ccc; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-item.active svg { stroke: #6b3f1f; }
+.nav-item span { font-size: 10px; color: #ccc; }
+.nav-item.active span { color: #6b3f1f; }
+.nav-badge { position: relative; display: inline-block; }
+.nav-dot { position: absolute; top: -2px; right: -3px; width: 8px; height: 8px; background: #c8860a; border-radius: 50%; border: 1.5px solid #fff; }
+
+/* CART PANEL */
+.cart-panel { display: none; padding: 16px 16px 100px; }
+.cart-panel.show { display: block; }
+.cart-empty { text-align: center; padding: 60px 20px; }
+.cart-empty p { color: #aaa; font-size: 14px; margin-top: 12px; }
+.cart-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0ebe4; }
+.cart-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; }
+.cart-item-info { flex: 1; }
+.cart-item-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.cart-item-price { font-size: 12px; color: #6b3f1f; font-weight: 600; margin-top: 3px; }
+.qty-ctrl { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.qty-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #e0d6cc; background: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #6b3f1f; font-weight: 700; }
+.qty-num { font-size: 13px; font-weight: 600; min-width: 20px; text-align: center; }
+.checkout-bar { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; background: #6b3f1f; color: #fff; border: none; border-radius: 14px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.checkout-bar span { font-size: 13px; font-weight: 500; opacity: 0.85; }
+
+/* ORDERS PANEL */
+.orders-panel { display: none; padding: 16px 16px 100px; }
+.orders-panel.show { display: block; }
+.order-card { border: 1px solid #ede8e1; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.order-id { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+.order-status { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+.status-new { background: #fef3e2; color: #c8860a; }
+.status-ready { background: #e8f5e9; color: #2e7d32; }
+.order-items { font-size: 12px; color: #666; margin-bottom: 8px; }
+.order-total { font-size: 13px; font-weight: 700; color: #6b3f1f; }
+
+/* PROFILE PANEL */
+.profile-panel { display: none; padding: 20px 16px 100px; }
+.profile-panel.show { display: block; }
+.profile-avatar { width: 70px; height: 70px; background: #6b3f1f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 12px; }
+.profile-name { text-align: center; font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.profile-menu { margin-top: 24px; }
+.profile-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f0ebe4; cursor: pointer; }
+.profile-item svg { width: 20px; height: 20px; stroke: #6b3f1f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.profile-item span { font-size: 14px; color: #1a1a1a; }
+.profile-item .arrow { margin-left: auto; stroke: #ccc; }
+
+/* CUSTOM TORT PANEL */
+.custom-panel { display: none; padding: 16px; }
+.custom-panel.show { display: block; }
+.step-header { text-align: center; margin-bottom: 20px; }
+.step-header h2 { font-size: 16px; font-weight: 700; color: #3b1f0a; }
+.step-header p { font-size: 12px; color: #999; margin-top: 4px; }
+.progress-bar { display: flex; gap: 4px; margin-bottom: 20px; }
+.progress-step { flex: 1; height: 4px; border-radius: 2px; background: #ede8e1; }
+.progress-step.done { background: #6b3f1f; }
+.step-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 12px; }
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+.option { padding: 12px; border: 1.5px solid #ede8e1; border-radius: 12px; text-align: center; cursor: pointer; transition: all 0.2s; font-size: 12px; color: #555; }
+.option:active { transform: scale(0.97); }
+.option.selected { border-color: #6b3f1f; background: #faf5f0; color: #6b3f1f; font-weight: 600; }
+.option-emoji { font-size: 24px; display: block; margin-bottom: 4px; }
+.next-btn { width: 100%; background: #6b3f1f; color: #fff; border: none; border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.next-btn:disabled { background: #ccc; cursor: not-allowed; }
+.price-tag { background: #faf5f0; border: 1px solid #ede8e1; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #6b3f1f; font-weight: 600; text-align: center; }
+
+/* HOME PANEL */
+.home-panel { display: block; }
+.home-panel.hide { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🎂 Yolchiyev's Bakery</h1>
+    <p>Toshkent · Shirinlik do'koni</p>
+  </div>
+  <div class="header-icons">
+    <button onclick="showSearch()">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- HOME PANEL -->
+<div id="homePanel" class="home-panel">
+  <div class="cats">
+    <div class="cat active" onclick="filterCat(this,'all')">Barchasi</div>
+    <div class="cat" onclick="filterCat(this,'tort')">🎂 Tortlar</div>
+    <div class="cat" onclick="filterCat(this,'pirojniy')">🥐 Pirojniy</div>
+    <div class="cat" onclick="filterCat(this,'desert')">🍮 Desertlar</div>
+    <div class="cat" onclick="filterCat(this,'kapkeyk')">🧁 Kapkeyk</div>
+  </div>
+
+  <div class="banner" onclick="showCustom()">
+    <div class="banner-text">
+      <h3>Maxsus Tort Zakaz</h3>
+      <p>0 dan o'z tortingizni yarating</p>
+      <span class="banner-tag">1 kg = 190 000 so'm dan</span>
+    </div>
+    <div class="banner-emoji">🎨</div>
+  </div>
+
+  <div class="sec-title" id="secTitle">Barcha mahsulotlar</div>
+  <div class="grid" id="productsGrid"></div>
+</div>
+
+<!-- CART PANEL -->
+<div id="cartPanel" class="cart-panel">
+  <div class="sec-title">Savat</div>
+  <div id="cartItems"></div>
+  <button class="checkout-bar" id="checkoutBtn" onclick="checkout()" style="display:none">
+    <span>Buyurtma berish</span>
+    <span id="cartTotal"></span>
+  </button>
+</div>
+
+<!-- ORDERS PANEL -->
+<div id="ordersPanel" class="orders-panel">
+  <div class="sec-title">Buyurtmalarim</div>
+  <div id="ordersList"></div>
+</div>
+
+<!-- PROFILE PANEL -->
+<div id="profilePanel" class="profile-panel">
+  <div class="profile-avatar">👤</div>
+  <div class="profile-name" id="profileName">Mehmon</div>
+  <div class="profile-menu">
+    <div class="profile-item">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Shaxsiy ma'lumotlar</span>
+      <svg class="arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="profile-item">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Buyurtmalar tarixi</span>
+      <svg class="arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="profile-item">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 15 19.79 19.79 0 0 1 1.93 6.38 2 2 0 0 1 3.91 4.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 11a16 16 0 0 0 5.91 5.91l1.07-1.07a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.03z"/></svg>
+      <span>Bog'lanish: +998 90 123 45 67</span>
+      <svg class="arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+    <div class="profile-item">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Biz haqimizda</span>
+      <svg class="arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM TORT PANEL -->
+<div id="customPanel" class="custom-panel">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+    <button onclick="showHome()" style="background:none;border:none;cursor:pointer;padding:4px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span style="font-size:16px;font-weight:700;color:#3b1f0a;">Maxsus Tort Yaratish</span>
+  </div>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-step" id="ps1"></div>
+    <div class="progress-step" id="ps2"></div>
+    <div class="progress-step" id="ps3"></div>
+    <div class="progress-step" id="ps4"></div>
+    <div class="progress-step" id="ps5"></div>
+  </div>
+
+  <div id="customStep"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="nav-item active" id="nav0" onclick="switchTab(0)">
+    <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Bosh sahifa</span>
+  </div>
+  <div class="nav-item" id="nav1" onclick="switchTab(1)">
+    <div class="nav-badge">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <div class="nav-dot" id="cartDot" style="display:none"></div>
+    </div>
+    <span>Savat</span>
+  </div>
+  <div class="nav-item" id="nav2" onclick="switchTab(2)">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Buyurtmalar</span>
+  </div>
+  <div class="nav-item" id="nav3" onclick="switchTab(3)">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </div>
+</nav>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.expand(); tg.ready(); }
+
+const PRODUCTS = [
+  { id:1, cat:'tort', name:'Klassik Oq Tort', desc:'Qaymoq krem · 1.5 kg', price:190000, tag:'Mashhur', img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&q=80' },
+  { id:2, cat:'tort', name:'Shokolad Tort', desc:'Qora biskivit · 1.5 kg', price:190000, tag:'', img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=300&q=80' },
+  { id:3, cat:'tort', name:'Malinali Tort', desc:'Qaymoq krem · 1.5 kg', price:190000, tag:'Yangi', img:'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=300&q=80' },
+  { id:4, cat:'tort', name:'Kofe Tort', desc:'Chiz krem · 1 kg', price:190000, tag:'', img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=300&q=80' },
+  { id:5, cat:'tort', name:'Trufelniy Tort', desc:'Qora qaymoq · 1.5 kg', price:190000, tag:'', img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=300&q=80' },
+  { id:6, cat:'pirojniy', name:'Ekler', desc:'Shokolad glazur · 1 dona', price:14000, tag:'', img:'https://images.unsplash.com/photo-1603532648955-039310d9ed75?w=300&q=80' },
+  { id:7, cat:'pirojniy', name:'Napoleon', desc:'Qatlama krem · 1 bo\'lak', price:18000, tag:'', img:'https://images.unsplash.com/photo-1519915028121-7d3463d5b1c4?w=300&q=80' },
+  { id:8, cat:'desert', name:'Panna Kotta', desc:'Italyan dessert · 1 dona', price:25000, tag:'', img:'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&q=80' },
+  { id:9, cat:'desert', name:'Brauni', desc:'Shokolad keki · 1 bo\'lak', price:20000, tag:'', img:'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=300&q=80' },
+  { id:10, cat:'kapkeyk', name:'Kapkeyk', desc:'Turli kremlar · 1 dona', price:15000, tag:'', img:'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=300&q=80' },
+];
+
+let cart = [];
+let orders = [];
+let currentCat = 'all';
+let customData = {};
+let customStep = 1;
+
+const CUSTOM_STEPS = [
+  { key:'biskivit', title:'Biskivit turi', options:[{e:'⬜',l:'Oq biskivit'},{e:'⬛',l:'Qora biskivit'},{e:'🍫',l:'Trufelniy'},{e:'☕',l:'Kofe biskivit'},{e:'🍒',l:'Malinali'}] },
+  { key:'qavat', title:'Qavat soni', options:[{e:'1️⃣',l:'1 qavat\n~1.5-2 kg'},{e:'2️⃣',l:'2 qavat\n~3-4 kg'},{e:'3️⃣',l:'3 qavat\n~5-7 kg'}] },
+  { key:'nachinka', title:'Ichki nachinka', options:[{e:'🍒',l:'Olchali'},{e:'🍌',l:'Bananli'},{e:'🍫',l:'Shokolad'},{e:'🍬',l:'Iriska'},{e:'🥜',l:'Yer yong\'oq'},{e:'❌',l:'Kerak emas'}] },
+  { key:'krem', title:'Krem turi', options:[{e:'🤍',l:'Qaymoq krem'},{e:'🧀',l:'Chiz krem'},{e:'🖤',l:'Qora qaymoq'}] },
+  { key:'bezak', title:'Ustki bezak', options:[{e:'🌸',l:'Gul bezak'},{e:'🎀',l:'Lenta+yozuv'},{e:'🍓',l:'Yangi mevalar'},{e:'🍫',l:'Shok. figuralar'},{e:'✨',l:'Oddiy tekis'}] },
+];
+
+function renderProducts(cat) {
+  const grid = document.getElementById('productsGrid');
+  const title = document.getElementById('secTitle');
+  const filtered = cat === 'all' ? PRODUCTS : PRODUCTS.filter(p => p.cat === cat);
+  const titles = {all:'Barcha mahsulotlar', tort:'Tortlar', pirojniy:'Pirojniylar', desert:'Desertlar', kapkeyk:'Kapkeyklar'};
+  title.textContent = titles[cat];
+  grid.innerHTML = filtered.map(p => `
+    <div class="card" onclick="addToCart(${p.id})">
+      <div class="card-img">
+        <img src="${p.img}" alt="${p.name}" loading="lazy">
+        ${p.tag ? `<span class="card-tag">${p.tag}</span>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-desc">${p.desc}</div>
+        <div class="card-footer">
+          <span class="price">${p.price.toLocaleString()}</span>
+          <button class="add-btn" onclick="event.stopPropagation();addToCart(${p.id})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCat(el, cat) {
+  document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentCat = cat;
+  renderProducts(cat);
+}
+
+function addToCart(id) {
+  const p = PRODUCTS.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++;
+  else cart.push({...p, qty:1});
+  updateCartBadge();
+  if (tg) tg.HapticFeedback && tg.HapticFeedback.impactOccurred('light');
+  showToast(p.name + ' savatga qo\'shildi');
+}
+
+function updateCartBadge() {
+  const total = cart.reduce((s,i) => s+i.qty, 0);
+  document.getElementById('cartDot').style.display = total > 0 ? 'block' : 'none';
+}
+
+function renderCart() {
+  const el = document.getElementById('cartItems');
+  const btn = document.getElementById('checkoutBtn');
+  const totalEl = document.getElementById('cartTotal');
+  if (cart.length === 0) {
+    el.innerHTML = '<div class="cart-empty"><div style="font-size:48px">🛒</div><p>Savat bo\'sh</p></div>';
+    btn.style.display = 'none';
+    return;
+  }
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  el.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <img src="${item.img}" alt="${item.name}">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${(item.price*item.qty).toLocaleString()} so'm</div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  totalEl.textContent = total.toLocaleString() + ' so\'m';
+  btn.style.display = 'flex';
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
+  updateCartBadge();
+  renderCart();
+}
+
+function checkout() {
+  const total = cart.reduce((s,i) => s + i.price*i.qty, 0);
+  const orderNum = orders.length + 1;
+  orders.push({ id: orderNum, items: [...cart], total, status: 'new', date: new Date().toLocaleDateString('uz-UZ') });
+  if (tg && tg.sendData) {
+    tg.sendData(JSON.stringify({ type:'order', items: cart.map(i=>({name:i.name,qty:i.qty,price:i.price})), total }));
+  }
+  cart = [];
+  updateCartBadge();
+  renderCart();
+  renderOrders();
+  switchTab(2);
+  showToast('Buyurtmangiz qabul qilindi!');
+}
+
+function renderOrders() {
+  const el = document.getElementById('ordersList');
+  if (orders.length === 0) {
+    el.innerHTML = '<div class="cart-empty"><div style="font-size:48px">📦</div><p>Hali buyurtma yo\'q</p></div>';
+    return;
+  }
+  const statusMap = { new:'Yangi', preparing:'Tayyorlanmoqda', ready:'Tayyor', delivered:'Yetkazildi' };
+  const statusClass = { new:'status-new', preparing:'status-new', ready:'status-ready', delivered:'status-ready' };
+  el.innerHTML = orders.slice().reverse().map(o => `
+    <div class="order-card">
+      <div class="order-header">
+        <span class="order-id">Buyurtma #${o.id}</span>
+        <span class="order-status ${statusClass[o.status]}">${statusMap[o.status]||o.status}</span>
+      </div>
+      <div class="order-items">${o.items.map(i=>i.name+' × '+i.qty).join(', ')}</div>
+      <div class="order-total">${o.total.toLocaleString()} so'm</div>
+    </div>
+  `).join('');
+}
+
+function showCustom() {
+  customData = {}; customStep = 1;
+  document.getElementById('homePanel').classList.add('hide');
+  document.getElementById('customPanel').classList.add('show');
+  renderCustomStep();
+}
+
+function showHome() {
+  document.getElementById('customPanel').classList.remove('show');
+  document.getElementById('homePanel').classList.remove('hide');
+}
+
+function renderCustomStep() {
+  const step = CUSTOM_STEPS[customStep-1];
+  const progressBar = document.getElementById('progressBar');
+  for (let i=1;i<=5;i++) {
+    document.getElementById('ps'+i).classList.toggle('done', i <= customStep);
+  }
+  const el = document.getElementById('customStep');
+  const kg = customData.qavat === '1 qavat\n~1.5-2 kg' ? 1.75 : customData.qavat === '2 qavat\n~3-4 kg' ? 3.5 : customData.qavat === '3 qavat\n~5-7 kg' ? 6 : 0;
+  const priceHint = customData.qavat ? `<div class="price-tag">Taxminiy narx: ~${Math.round(kg*190000).toLocaleString()} so'm</div>` : '';
+  el.innerHTML = `
+    <div class="step-header">
+      <h2>${customStep}/${CUSTOM_STEPS.length}-qadam</h2>
+      <p>${step.title}ni tanlang</p>
+    </div>
+    ${customStep >= 2 ? priceHint : ''}
+    <div class="step-title">${step.title}</div>
+    <div class="options">
+      ${step.options.map(o => `
+        <div class="option ${customData[step.key]===o.l?'selected':''}" onclick="selectOption('${step.key}','${o.l.replace(/'/g,"\\'")}',this)">
+          <span class="option-emoji">${o.e}</span>
+          ${o.l.replace(/\n/g,'<br>')}
+        </div>
+      `).join('')}
+    </div>
+    ${customStep < 5
+      ? `<button class="next-btn" id="nextBtn" onclick="nextStep()" ${customData[step.key]?'':'disabled'}>Keyingi →</button>`
+      : `<button class="next-btn" id="nextBtn" onclick="finishCustom()" ${customData[step.key]?'':'disabled'}>Buyurtma berish ✓</button>`
+    }
+  `;
+}
+
+function selectOption(key, val, el) {
+  customData[key] = val;
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextStep() {
+  if (customStep < 5) { customStep++; renderCustomStep(); }
+}
+
+function finishCustom() {
+  const orderNum = orders.length + 1;
+  const summary = `Maxsus Tort: ${customData.biskivit}, ${customData.qavat}, ${customData.nachinka}, ${customData.krem}, ${customData.bezak}`;
+  const kg = customData.qavat === '1 qavat\n~1.5-2 kg' ? 1.75 : customData.qavat === '2 qavat\n~3-4 kg' ? 3.5 : 6;
+  const price = Math.round(kg*190000);
+  orders.push({ id: orderNum, items:[{name:'Maxsus Tort',qty:1,price}], total:price, status:'new' });
+  if (tg && tg.sendData) {
+    tg.sendData(JSON.stringify({ type:'custom_tort', ...customData, price }));
+  }
+  renderOrders();
+  showHome();
+  switchTab(2);
+  showToast('Maxsus tort buyurtmangiz qabul qilindi!');
+}
+
+function switchTab(n) {
+  ['homePanel','cartPanel','ordersPanel','profilePanel'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (i===0) { el.classList.toggle('hide', n!==0); el.classList.toggle('home-panel', true); }
+    else el.classList.toggle('show', i===n);
+  });
+  document.querySelectorAll('.nav-item').forEach((el,i) => el.classList.toggle('active', i===n));
+  if (n===1) renderCart();
+  if (n===2) renderOrders();
+  if (n===3 && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    document.getElementById('profileName').textContent = tg.initDataUnsafe.user.first_name || 'Foydalanuvchi';
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;z-index:999;white-space:nowrap;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function showSearch() { showToast('Qidiruv tez orada!'); }
+
+renderProducts('all');
+</script>
+</body>
+</html>
