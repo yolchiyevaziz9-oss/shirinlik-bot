@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Yolchiyev's Bakery</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --cream:#FDF8F3;
+  --cream2:#F5EDE0;
+  --cream3:#EFE0CC;
+  --warm:#E8C99A;
+  --gold:#C8860A;
+  --brown:#7A4F2D;
+  --dark:#2C1810;
+  --muted:#9E7D5A;
+  --white:#FFFCF8;
+  --border:#F0E4D0;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--cream);color:var(--dark);max-width:480px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+.hdr{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--cream);position:sticky;top:0;z-index:100;border-bottom:0.5px solid var(--border)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:36px;height:36px;background:var(--brown);border-radius:10px;overflow:hidden;flex-shrink:0}
+.logo-mark img{width:100%;height:100%;object-fit:cover}
+.logo-text h1{font-size:14px;font-weight:600;color:var(--dark);letter-spacing:-0.2px}
+.logo-text p{font-size:10px;color:var(--muted);font-weight:300;letter-spacing:0.3px}
+.hdr-right{display:flex;gap:10px;align-items:center}
+.hdr-right .icon-btn{width:36px;height:36px;background:var(--cream2);border-radius:10px;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+.hdr-right .icon-btn svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cart-btn{width:36px;height:36px;background:var(--brown);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;border:none}
+.cart-btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cart-count{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;background:var(--gold);border-radius:100px;font-size:9px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 4px;border:1.5px solid var(--cream)}
+
+/* HERO */
+.hero{margin:12px 16px;border-radius:20px;overflow:hidden;position:relative;height:170px;cursor:pointer}
+.hero img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(100deg,rgba(44,24,16,0.88) 45%,rgba(44,24,16,0.1))}
+.hero-content{position:absolute;inset:0;padding:20px}
+.hero-label{font-size:10px;color:var(--warm);letter-spacing:1.5px;text-transform:uppercase;font-weight:400;margin-bottom:6px}
+.hero-title{font-size:18px;font-weight:600;color:#fff;line-height:1.3;margin-bottom:12px;letter-spacing:-0.3px}
+.hero-tag{display:inline-flex;align-items:center;gap:5px;background:var(--gold);color:#fff;font-size:10px;font-weight:600;padding:5px 12px;border-radius:100px}
+
+/* CATEGORIES */
+.section{padding:16px 16px 0}
+.section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-hdr h2{font-size:15px;font-weight:600;color:var(--dark);letter-spacing:-0.2px}
+.section-hdr a{font-size:11px;color:var(--gold);font-weight:500;text-decoration:none}
+.cats{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.cats::-webkit-scrollbar{display:none}
+.cat{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:64px}
+.cat-img{width:60px;height:60px;border-radius:16px;overflow:hidden;border:2.5px solid transparent;transition:all .2s;background:var(--cream2);flex-shrink:0}
+.cat-img img{width:100%;height:100%;object-fit:cover}
+.cat.on .cat-img{border-color:var(--brown);box-shadow:0 0 0 2px rgba(122,79,45,0.2)}
+.cat-name{font-size:10px;color:var(--muted);font-weight:400;text-align:center;letter-spacing:0.2px}
+.cat.on .cat-name{color:var(--brown);font-weight:600}
+
+/* FEATURED ROW */
+.h-scroll{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:0 16px 4px}
+.h-scroll::-webkit-scrollbar{display:none}
+.feat-card{min-width:155px;background:var(--white);border-radius:18px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;cursor:pointer}
+.feat-img{height:110px;overflow:hidden;position:relative;background:var(--cream2)}
+.feat-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.feat-card:active .feat-img img{transform:scale(1.05)}
+.feat-badge{position:absolute;top:8px;left:8px;background:var(--gold);color:#fff;font-size:9px;font-weight:600;padding:3px 8px;border-radius:100px}
+.heart-btn{position:absolute;top:7px;right:7px;width:28px;height:28px;background:rgba(255,252,248,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer}
+.heart-btn svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2}
+.heart-btn.active svg{stroke:#e24b4a;fill:#e24b4a}
+.feat-body{padding:10px}
+.feat-name{font-size:12px;font-weight:600;color:var(--dark);margin-bottom:2px}
+.feat-sub{font-size:10px;color:var(--muted);font-weight:300;margin-bottom:8px}
+.feat-foot{display:flex;align-items:center;justify-content:space-between}
+.feat-price{font-size:13px;font-weight:700;color:var(--brown)}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px 100px}
+.card{background:var(--white);border-radius:18px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .15s}
+.card:active{transform:scale(0.97)}
+.card-img{height:120px;overflow:hidden;position:relative;background:var(--cream2)}
+.card-img img{width:100%;height:100%;object-fit:cover}
+.card-badge{position:absolute;top:7px;left:7px;background:rgba(44,24,16,0.7);color:#fff;font-size:9px;padding:3px 8px;border-radius:100px;backdrop-filter:blur(6px)}
+.card-body{padding:10px}
+.card-name{font-size:12px;font-weight:600;color:var(--dark);margin-bottom:2px}
+.card-sub{font-size:10px;color:var(--muted);font-weight:300;margin-bottom:8px}
+.card-foot{display:flex;align-items:center;justify-content:space-between}
+.price{font-size:12px;font-weight:700;color:var(--brown)}
+.add-btn{width:28px;height:28px;background:var(--brown);border-radius:9px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s}
+.add-btn:active{background:var(--dark)}
+.add-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* CART PANEL */
+.panel{display:none;padding:16px 16px 100px}
+.panel.show{display:block}
+.panel-title{font-size:17px;font-weight:600;color:var(--dark);margin-bottom:16px;letter-spacing:-0.3px}
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state img{width:80px;height:80px;object-fit:cover;border-radius:20px;opacity:0.4;margin-bottom:12px}
+.empty-state p{color:var(--muted);font-size:14px;font-weight:300}
+.cart-item{display:flex;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border)}
+.cart-item img{width:64px;height:64px;object-fit:cover;border-radius:12px;flex-shrink:0}
+.ci-info{flex:1}
+.ci-name{font-size:13px;font-weight:600;color:var(--dark);margin-bottom:3px}
+.ci-price{font-size:12px;color:var(--brown);font-weight:700}
+.qty-ctrl{display:flex;align-items:center;gap:10px;margin-top:8px}
+.qty-btn{width:26px;height:26px;border-radius:8px;border:1px solid var(--border);background:var(--white);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--brown);font-weight:700}
+.qty-num{font-size:13px;font-weight:600;min-width:20px;text-align:center;color:var(--dark)}
+.cart-summary{background:var(--cream2);border-radius:16px;padding:14px;margin-top:16px;margin-bottom:80px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.summary-row:last-child{margin-bottom:0}
+.summary-label{font-size:12px;color:var(--muted);font-weight:300}
+.summary-val{font-size:12px;color:var(--dark);font-weight:500}
+.summary-total{border-top:0.5px solid var(--border);padding-top:10px;margin-top:4px}
+.summary-total .summary-label{font-size:14px;font-weight:600;color:var(--dark)}
+.summary-total .summary-val{font-size:14px;font-weight:700;color:var(--brown)}
+.checkout-btn{position:fixed;bottom:74px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:448px;background:var(--brown);color:#fff;border:none;border-radius:14px;padding:15px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;z-index:50}
+.checkout-btn span{opacity:0.8;font-size:13px;font-weight:400}
+
+/* ORDERS PANEL */
+.order-card{border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;background:var(--white)}
+.order-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.order-id{font-size:13px;font-weight:600;color:var(--dark)}
+.status{font-size:10px;padding:4px 10px;border-radius:100px;font-weight:500}
+.s-new{background:#F5F0E8;color:var(--brown)}
+.s-prep{background:#FFF8E6;color:var(--gold)}
+.s-done{background:#F0FAF0;color:#2e7d32}
+.order-name{font-size:12px;color:var(--muted);font-weight:300;margin-bottom:8px}
+.order-foot{display:flex;justify-content:space-between}
+.order-price{font-size:13px;font-weight:700;color:var(--brown)}
+.order-date{font-size:11px;color:var(--muted);font-weight:300}
+
+/* PROFILE PANEL */
+.profile-hero{background:var(--brown);margin:-16px -16px 20px;padding:24px 16px 20px}
+.profile-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:300;color:#fff;margin-bottom:12px;border:2px solid rgba(255,255,255,0.2)}
+.profile-name{font-size:17px;font-weight:600;color:#fff;margin-bottom:2px}
+.profile-sub{font-size:12px;color:var(--warm);font-weight:300}
+.profile-badge{display:inline-flex;align-items:center;gap:4px;margin-top:8px;background:rgba(255,255,255,0.12);color:var(--warm);font-size:10px;padding:4px 12px;border-radius:100px;border:1px solid rgba(255,255,255,0.1)}
+.profile-tabs{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px}
+.ptab{flex:1;text-align:center;padding:11px 0;font-size:11px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;font-weight:400;letter-spacing:0.3px;transition:all .2s}
+.ptab.on{color:var(--brown);border-bottom-color:var(--brown);font-weight:600}
+.info-group{background:var(--white);border-radius:16px;overflow:hidden;margin-bottom:14px;border:1px solid var(--border)}
+.info-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:0.5px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-icon{width:32px;height:32px;background:var(--cream2);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.info-icon svg{width:16px;height:16px;stroke:var(--brown);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.info-col{flex:1}
+.info-label{font-size:10px;color:var(--muted);font-weight:300;margin-bottom:1px}
+.info-val{font-size:13px;color:var(--dark);font-weight:400}
+.edit-btn{font-size:11px;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:500}
+.notif-row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:0.5px solid var(--border)}
+.notif-row:last-child{border-bottom:none}
+.notif-icon{width:32px;height:32px;background:var(--cream2);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notif-icon svg{width:16px;height:16px;stroke:var(--brown);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.notif-info{flex:1}
+.notif-title{font-size:13px;color:var(--dark);font-weight:400}
+.notif-sub{font-size:10px;color:var(--muted);font-weight:300;margin-top:1px}
+.toggle{width:44px;height:24px;background:var(--brown);border-radius:100px;position:relative;cursor:pointer;flex-shrink:0;transition:background .25s;border:none}
+.toggle.off{background:var(--cream3)}
+.toggle-dot{position:absolute;top:3px;right:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:all .25s;box-shadow:0 1px 3px rgba(0,0,0,0.15)}
+.toggle.off .toggle-dot{right:auto;left:3px}
+.logout-btn{width:100%;padding:13px;border:1px solid #F5C0B0;border-radius:14px;background:#FFF5F2;color:#C0392B;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.logout-btn svg{width:16px;height:16px;stroke:#C0392B;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* CUSTOM TORT */
+.custom-panel{display:none;padding:16px 16px 100px}
+.custom-panel.show{display:block}
+.back-row{display:flex;align-items:center;gap:10px;margin-bottom:18px;cursor:pointer}
+.back-row svg{width:20px;height:20px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.back-row span{font-size:15px;font-weight:600;color:var(--dark)}
+.progress-bar{display:flex;gap:4px;margin-bottom:20px}
+.pstep{flex:1;height:4px;border-radius:2px;background:var(--cream3);transition:background .3s}
+.pstep.done{background:var(--brown)}
+.step-info{text-align:center;margin-bottom:20px}
+.step-info p{font-size:11px;color:var(--muted);font-weight:300;margin-bottom:4px}
+.step-info h3{font-size:16px;font-weight:600;color:var(--dark)}
+.price-hint{background:var(--cream2);border-radius:12px;padding:10px 14px;text-align:center;font-size:13px;color:var(--brown);font-weight:600;margin-bottom:16px;border:1px solid var(--border)}
+.options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.option{padding:12px 10px;border:1.5px solid var(--border);border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;background:var(--white)}
+.option:active{transform:scale(0.97)}
+.option.sel{border-color:var(--brown);background:rgba(122,79,45,0.06)}
+.opt-img{width:44px;height:44px;border-radius:10px;overflow:hidden;margin:0 auto 6px;background:var(--cream2)}
+.opt-img img{width:100%;height:100%;object-fit:cover}
+.opt-label{font-size:11px;color:var(--dark);font-weight:500;line-height:1.3}
+.next-btn{width:100%;background:var(--brown);color:#fff;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+.next-btn:disabled{background:var(--cream3);color:var(--muted);cursor:not-allowed}
+.next-btn:active:not(:disabled){background:var(--dark)}
+
+/* TOAST */
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 18px;border-radius:20px;font-size:12px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* BOTTOM NAV */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--white);border-top:1px solid var(--border);display:flex;padding:10px 0 18px;z-index:100}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0}
+.ni svg{width:22px;height:22px;stroke:var(--cream3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.ni.on svg{stroke:var(--brown)}
+.ni span{font-size:9px;color:var(--cream3);letter-spacing:0.3px;font-weight:400;transition:color .2s}
+.ni.on span{color:var(--brown);font-weight:600}
+.ni-dot{position:relative;display:inline-block}
+.ni-dot::after{content:'';position:absolute;top:-2px;right:-4px;width:7px;height:7px;background:var(--gold);border-radius:50%;border:1.5px solid var(--white);display:none}
+.ni-dot.has-items::after{display:block}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">
+    <div class="logo-mark">
+      <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=100&q=80" alt="logo">
+    </div>
+    <div class="logo-text">
+      <h1>Yolchiyev's Bakery</h1>
+      <p>Toshkent · Shirinlik do'koni</p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="icon-btn">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+    <button class="cart-btn" onclick="switchTab(1)">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      <div class="cart-count" id="cartCount" style="display:none">0</div>
+    </button>
+  </div>
+</div>
+
+<!-- HOME PANEL -->
+<div id="homePanel">
+  <div class="hero" onclick="showCustom()">
+    <img src="https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=600&q=80" alt="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-label">Maxsus taklif</div>
+      <div class="hero-title">0 dan o'z<br>tortingizni<br>yarating</div>
+      <span class="hero-tag">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+        1 kg = 190 000 so'm dan
+      </span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-hdr"><h2>Kategoriyalar</h2></div>
+    <div class="cats" id="catList">
+      <div class="cat on" onclick="filterCat(this,'all')">
+        <div class="cat-img"><img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80" alt=""></div>
+        <span class="cat-name">Barchasi</span>
+      </div>
+      <div class="cat" onclick="filterCat(this,'tort')">
+        <div class="cat-img"><img src="https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80" alt=""></div>
+        <span class="cat-name">Tortlar</span>
+      </div>
+      <div class="cat" onclick="filterCat(this,'pirojniy')">
+        <div class="cat-img"><img src="https://images.unsplash.com/photo-1603532648955-039310d9ed75?w=120&q=80" alt=""></div>
+        <span class="cat-name">Pirojniy</span>
+      </div>
+      <div class="cat" onclick="filterCat(this,'desert')">
+        <div class="cat-img"><img src="https://images.unsplash.com/photo-1488477181946-6428a0291777?w=120&q=80" alt=""></div>
+        <span class="cat-name">Desertlar</span>
+      </div>
+      <div class="cat" onclick="filterCat(this,'kapkeyk')">
+        <div class="cat-img"><img src="https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=120&q=80" alt=""></div>
+        <span class="cat-name">Kapkeyk</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:16px">
+    <div class="section-hdr"><h2>Mashhur tortlar</h2><a href="#">Hammasini ko'r</a></div>
+  </div>
+  <div class="h-scroll" id="featRow"></div>
+
+  <div class="section" style="margin-top:8px">
+    <div class="section-hdr"><h2 id="gridTitle">Barcha mahsulotlar</h2></div>
+  </div>
+  <div class="grid" id="productsGrid"></div>
+</div>
+
+<!-- CART PANEL -->
+<div id="cartPanel" class="panel">
+  <div class="panel-title">Savat</div>
+  <div id="cartItems"></div>
+</div>
+
+<!-- ORDERS PANEL -->
+<div id="ordersPanel" class="panel">
+  <div class="panel-title">Buyurtmalarim</div>
+  <div id="ordersList"></div>
+</div>
+
+<!-- PROFILE PANEL -->
+<div id="profilePanel" class="panel">
+  <div class="profile-hero">
+    <div class="profile-avatar" id="profileAvatar">AY</div>
+    <div class="profile-name" id="profileName">Aziz Yolchiyev</div>
+    <div class="profile-sub">+998 90 123 45 67</div>
+    <span class="profile-badge">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg>
+      Doimiy mijoz
+    </span>
+  </div>
+
+  <div class="profile-tabs">
+    <div class="ptab on" onclick="switchProfileTab(0,this)">Ma'lumotlar</div>
+    <div class="ptab" onclick="switchProfileTab(1,this)">Buyurtmalar</div>
+    <div class="ptab" onclick="switchProfileTab(2,this)">Yoqtirilgan</div>
+    <div class="ptab" onclick="switchProfileTab(3,this)">Sozlamalar</div>
+  </div>
+
+  <div id="ptab0">
+    <div class="info-group">
+      <div class="info-row">
+        <div class="info-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+        <div class="info-col"><div class="info-label">Ism Familiya</div><div class="info-val" id="piName">Aziz Yolchiyev</div></div>
+        <button class="edit-btn">Tahrirlash</button>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.99 15 19.79 19.79 0 0 1 1.93 6.38 2 2 0 0 1 3.91 4.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 11a16 16 0 0 0 5.91 5.91l1.07-1.07a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17.92z"/></svg></div>
+        <div class="info-col"><div class="info-label">Telefon</div><div class="info-val">+998 90 123 45 67</div></div>
+        <button class="edit-btn">Tahrirlash</button>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="info-col"><div class="info-label">Manzil</div><div class="info-val">Toshkent, Chilonzor, 14-kv</div></div>
+        <button class="edit-btn">Tahrirlash</button>
+      </div>
+    </div>
+    <button class="logout-btn">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Profildan chiqish
+    </button>
+  </div>
+
+  <div id="ptab1" style="display:none">
+    <div id="profileOrders"></div>
+  </div>
+
+  <div id="ptab2" style="display:none">
+    <div class="grid" style="padding:0 0 20px" id="favGrid"></div>
+  </div>
+
+  <div id="ptab3" style="display:none">
+    <div class="info-group">
+      <div class="notif-row">
+        <div class="notif-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="notif-info"><div class="notif-title">Buyurtma holati</div><div class="notif-sub">O'zgarishlar haqida xabar</div></div>
+        <button class="toggle" onclick="this.classList.toggle('off')"><div class="toggle-dot"></div></button>
+      </div>
+      <div class="notif-row">
+        <div class="notif-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <div class="notif-info"><div class="notif-title">Aksiya va chegirmalar</div><div class="notif-sub">Maxsus takliflar</div></div>
+        <button class="toggle" onclick="this.classList.toggle('off')"><div class="toggle-dot"></div></button>
+      </div>
+      <div class="notif-row">
+        <div class="notif-icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        <div class="notif-info"><div class="notif-title">Yetkazib berish</div><div class="notif-sub">Kuryer yo'lda ekanda</div></div>
+        <button class="toggle off" onclick="this.classList.toggle('off')"><div class="toggle-dot"></div></button>
+      </div>
+      <div class="notif-row">
+        <div class="notif-icon"><svg viewBox="0 0 24 24"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/></svg></div>
+        <div class="notif-info"><div class="notif-title">Yangi mahsulotlar</div><div class="notif-sub">Do'konda yangiliklar</div></div>
+        <button class="toggle off" onclick="this.classList.toggle('off')"><div class="toggle-dot"></div></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM TORT PANEL -->
+<div id="customPanel" class="custom-panel">
+  <div class="back-row" onclick="showHome()">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    <span>Maxsus Tort Yaratish</span>
+  </div>
+  <div class="progress-bar" id="pbar">
+    <div class="pstep" id="ps1"></div><div class="pstep" id="ps2"></div>
+    <div class="pstep" id="ps3"></div><div class="pstep" id="ps4"></div>
+    <div class="pstep" id="ps5"></div>
+  </div>
+  <div id="customStepContent"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="nav">
+  <div class="ni on" id="nav0" onclick="switchTab(0)">
+    <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Bosh sahifa</span>
+  </div>
+  <div class="ni" id="nav1" onclick="switchTab(1)">
+    <div class="ni-dot" id="niDot">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    </div>
+    <span>Savat</span>
+  </div>
+  <div class="ni" id="nav2" onclick="switchTab(2)">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    <span>Buyurtmalar</span>
+  </div>
+  <div class="ni" id="nav3" onclick="switchTab(3)">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span>Profil</span>
+  </div>
+</nav>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if(tg){tg.expand();tg.ready();}
+
+const PRODUCTS = [
+  {id:1,cat:'tort',name:'Klassik Oq Tort',sub:'Qaymoq krem · 1.5 kg',price:190000,badge:'Top',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&q=80'},
+  {id:2,cat:'tort',name:'Shokolad Tort',sub:'Qora biskivit · 1.5 kg',price:190000,badge:'',img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=300&q=80'},
+  {id:3,cat:'tort',name:'Malinali Tort',sub:'Qaymoq krem · 1.5 kg',price:190000,badge:'Yangi',img:'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=300&q=80'},
+  {id:4,cat:'tort',name:'Kofe Tort',sub:'Chiz krem · 1 kg',price:190000,badge:'',img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=300&q=80'},
+  {id:5,cat:'tort',name:'Trufelniy Tort',sub:'Qora qaymoq · 1.5 kg',price:190000,badge:'Premium',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=300&q=80'},
+  {id:6,cat:'pirojniy',name:'Ekler',sub:'Shokolad glazur · 1 dona',price:14000,badge:'',img:'https://images.unsplash.com/photo-1603532648955-039310d9ed75?w=300&q=80'},
+  {id:7,cat:'pirojniy',name:'Napoleon',sub:'Qatlama krem · 1 bo\'lak',price:18000,badge:'',img:'https://images.unsplash.com/photo-1519915028121-7d3463d5b1c4?w=300&q=80'},
+  {id:8,cat:'pirojniy',name:'Shu Krem',sub:'Vanillik krem · 1 dona',price:12000,badge:'',img:'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=300&q=80'},
+  {id:9,cat:'desert',name:'Panna Kotta',sub:'Italyan dessert · 1 dona',price:25000,badge:'',img:'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=300&q=80'},
+  {id:10,cat:'desert',name:'Brauni',sub:'Shokolad keki · 1 bo\'lak',price:20000,badge:'',img:'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=300&q=80'},
+  {id:11,cat:'kapkeyk',name:'Kapkeyk',sub:'Turli kremlar · 1 dona',price:15000,badge:'',img:'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=300&q=80'},
+];
+
+const CUSTOM_STEPS = [
+  {key:'biskivit',title:'Biskivit turi',sub:'Tortning asosini tanlang',options:[
+    {l:'Oq biskivit',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80'},
+    {l:'Qora biskivit',img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=120&q=80'},
+    {l:'Trufelniy',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80'},
+    {l:'Kofe biskivit',img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=120&q=80'},
+    {l:'Malinali',img:'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=120&q=80'},
+  ]},
+  {key:'qavat',title:'Qavat soni',sub:'Tortning balandligini tanlang',options:[
+    {l:'1 qavat\n~1.5-2 kg',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80'},
+    {l:'2 qavat\n~3-4 kg',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80'},
+    {l:'3 qavat\n~5-7 kg',img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=120&q=80'},
+  ]},
+  {key:'nachinka',title:'Ichki nachinka',sub:'Tortning ichiga nima solinsin',options:[
+    {l:'Olchali',img:'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=120&q=80'},
+    {l:'Bananli',img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=120&q=80'},
+    {l:'Shokolad',img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=120&q=80'},
+    {l:'Iriska',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80'},
+    {l:'Yer yong\'oq',img:'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=120&q=80'},
+    {l:'Kerak emas',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80'},
+  ]},
+  {key:'krem',title:'Krem turi',sub:'Ustki va ichki krem',options:[
+    {l:'Qaymoq krem',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80'},
+    {l:'Chiz krem',img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=120&q=80'},
+    {l:'Qora qaymoq',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80'},
+  ]},
+  {key:'bezak',title:'Ustki bezak',sub:'Tortni qanday bezaymiz',options:[
+    {l:'Gul bezak',img:'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=120&q=80'},
+    {l:'Lenta+yozuv',img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=120&q=80'},
+    {l:'Yangi mevalar',img:'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=120&q=80'},
+    {l:'Shok. figuralar',img:'https://images.unsplash.com/photo-1606890737304-57a1ca8a5806?w=120&q=80'},
+    {l:'Oddiy tekis',img:'https://images.unsplash.com/photo-1535141192574-5d4897c12636?w=120&q=80'},
+  ]},
+];
+
+let cart = [], orders = [], favorites = [], customData = {}, customStep = 1;
+
+// RENDER FEATURED
+function renderFeat(){
+  const row = document.getElementById('featRow');
+  const feat = PRODUCTS.filter(p=>p.cat==='tort').slice(0,4);
+  row.innerHTML = feat.map(p=>`
+    <div class="feat-card">
+      <div class="feat-img">
+        <img src="${p.img}" alt="${p.name}" loading="lazy">
+        ${p.badge?`<span class="feat-badge">${p.badge}</span>`:''}
+        <button class="heart-btn ${favorites.includes(p.id)?'active':''}" onclick="toggleFav(${p.id},this)">
+          <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+      </div>
+      <div class="feat-body">
+        <div class="feat-name">${p.name}</div>
+        <div class="feat-sub">${p.sub}</div>
+        <div class="feat-foot">
+          <span class="feat-price">${p.price.toLocaleString()}</span>
+          <button class="add-btn" onclick="addToCart(${p.id})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// RENDER GRID
+function renderGrid(cat){
+  const grid = document.getElementById('productsGrid');
+  const title = document.getElementById('gridTitle');
+  const titles = {all:'Barcha mahsulotlar',tort:'Tortlar',pirojniy:'Pirojniylar',desert:'Desertlar',kapkeyk:'Kapkeyklar'};
+  title.textContent = titles[cat]||'Barcha mahsulotlar';
+  const items = cat==='all'?PRODUCTS:PRODUCTS.filter(p=>p.cat===cat);
+  grid.innerHTML = items.map(p=>`
+    <div class="card">
+      <div class="card-img">
+        <img src="${p.img}" alt="${p.name}" loading="lazy">
+        ${p.badge?`<span class="card-badge">${p.badge}</span>`:''}
+      </div>
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-sub">${p.sub}</div>
+        <div class="card-foot">
+          <span class="price">${p.price.toLocaleString()} so'm</span>
+          <button class="add-btn" onclick="addToCart(${p.id})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCat(el, cat){
+  document.querySelectorAll('.cat').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderGrid(cat);
+}
+
+function toggleFav(id, btn){
+  if(favorites.includes(id)) favorites = favorites.filter(f=>f!==id);
+  else favorites.push(id);
+  btn.classList.toggle('active');
+  renderFavGrid();
+}
+
+function renderFavGrid(){
+  const grid = document.getElementById('favGrid');
+  if(!grid) return;
+  const favItems = PRODUCTS.filter(p=>favorites.includes(p.id));
+  if(favItems.length===0){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--muted);font-size:13px;font-weight:300">Hali yoqtirilgan mahsulot yo\'q</div>';return;}
+  grid.innerHTML = favItems.map(p=>`
+    <div class="card">
+      <div class="card-img"><img src="${p.img}" alt="${p.name}" loading="lazy"></div>
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-sub">${p.sub}</div>
+        <div class="card-foot">
+          <span class="price">${p.price.toLocaleString()} so'm</span>
+          <button class="add-btn" onclick="addToCart(${p.id})">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// CART
+function addToCart(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  const ex = cart.find(x=>x.id===id);
+  if(ex) ex.qty++;
+  else cart.push({...p,qty:1});
+  updateCartUI();
+  showToast(p.name+' savatga qo\'shildi');
+  if(tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+}
+
+function updateCartUI(){
+  const total = cart.reduce((s,i)=>s+i.qty,0);
+  const countEl = document.getElementById('cartCount');
+  const dotEl = document.getElementById('niDot');
+  countEl.style.display = total>0?'flex':'none';
+  countEl.textContent = total;
+  dotEl.classList.toggle('has-items', total>0);
+}
+
+function renderCart(){
+  const el = document.getElementById('cartItems');
+  if(cart.length===0){
+    el.innerHTML=`<div class="empty-state">
+      <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=160&q=60" alt="">
+      <p>Savat bo'sh</p>
+    </div>`;
+    return;
+  }
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  el.innerHTML = cart.map(item=>`
+    <div class="cart-item">
+      <img src="${item.img}" alt="${item.name}">
+      <div class="ci-info">
+        <div class="ci-name">${item.name}</div>
+        <div class="ci-price">${(item.price*item.qty).toLocaleString()} so'm</div>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+        </div>
+      </div>
+    </div>
+  `).join('')+`
+    <div class="cart-summary">
+      <div class="summary-row"><span class="summary-label">Mahsulotlar (${cart.reduce((s,i)=>s+i.qty,0)} ta)</span><span class="summary-val">${total.toLocaleString()} so'm</span></div>
+      <div class="summary-row"><span class="summary-label">Yetkazib berish</span><span class="summary-val" style="color:var(--gold)">Bepul</span></div>
+      <div class="summary-row summary-total"><span class="summary-label">Jami</span><span class="summary-val">${total.toLocaleString()} so'm</span></div>
+    </div>
+    <button class="checkout-btn" onclick="checkout()">
+      <span>Buyurtma berish</span>
+      <span>${total.toLocaleString()} so'm</span>
+    </button>
+  `;
+}
+
+function changeQty(id, d){
+  const item = cart.find(x=>x.id===id);
+  if(!item) return;
+  item.qty += d;
+  if(item.qty<=0) cart = cart.filter(x=>x.id!==id);
+  updateCartUI();
+  renderCart();
+}
+
+function checkout(){
+  const total = cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const num = orders.length+1;
+  orders.push({id:num,items:[...cart],total,status:'new',date:new Date().toLocaleDateString('uz-UZ')});
+  if(tg?.sendData) tg.sendData(JSON.stringify({type:'order',items:cart.map(i=>({name:i.name,qty:i.qty,price:i.price})),total}));
+  cart = [];
+  updateCartUI();
+  renderCart();
+  renderOrders();
+  switchTab(2);
+  showToast('Buyurtmangiz qabul qilindi!');
+}
+
+function renderOrders(){
+  const el = document.getElementById('ordersList');
+  const pel = document.getElementById('profileOrders');
+  const statusMap = {new:'Yangi',preparing:'Tayyorlanmoqda',ready:'Yetkazilmoqda',delivered:'Yetkazildi'};
+  const statusClass = {new:'s-new',preparing:'s-prep',ready:'s-prep',delivered:'s-done'};
+  if(orders.length===0){
+    const empty=`<div class="empty-state"><img src="https://images.unsplash.com/photo-1603532648955-039310d9ed75?w=160&q=60" alt=""><p>Hali buyurtma yo'q</p></div>`;
+    if(el) el.innerHTML=empty;
+    if(pel) pel.innerHTML=empty;
+    return;
+  }
+  const html = orders.slice().reverse().map(o=>`
+    <div class="order-card">
+      <div class="order-top">
+        <span class="order-id">Buyurtma #${o.id}</span>
+        <span class="status ${statusClass[o.status]||'s-new'}">${statusMap[o.status]||o.status}</span>
+      </div>
+      <div class="order-name">${o.items.map(i=>i.name+' × '+i.qty).join(', ')}</div>
+      <div class="order-foot">
+        <span class="order-price">${o.total.toLocaleString()} so'm</span>
+        <span class="order-date">${o.date||''}</span>
+      </div>
+    </div>
+  `).join('');
+  if(el) el.innerHTML=html;
+  if(pel) pel.innerHTML=html;
+}
+
+// CUSTOM TORT
+function showCustom(){
+  customData = {}; customStep = 1;
+  document.getElementById('homePanel').style.display='none';
+  document.getElementById('customPanel').classList.add('show');
+  renderCustomStep();
+  document.querySelectorAll('.nav .ni').forEach(n=>n.classList.remove('on'));
+}
+
+function showHome(){
+  document.getElementById('customPanel').classList.remove('show');
+  document.getElementById('homePanel').style.display='block';
+  document.getElementById('nav0').classList.add('on');
+}
+
+function renderCustomStep(){
+  const step = CUSTOM_STEPS[customStep-1];
+  for(let i=1;i<=5;i++) document.getElementById('ps'+i).classList.toggle('done',i<=customStep);
+  const kg = customData.qavat?.includes('1 qavat')?1.75:customData.qavat?.includes('2 qavat')?3.5:customData.qavat?.includes('3 qavat')?6:0;
+  const priceHint = kg>0?`<div class="price-hint">Taxminiy narx: ~${Math.round(kg*190000).toLocaleString()} so'm</div>`:'';
+  document.getElementById('customStepContent').innerHTML=`
+    <div class="step-info">
+      <p>${customStep} / ${CUSTOM_STEPS.length} — qadam</p>
+      <h3>${step.title}</h3>
+      <p style="margin-top:4px;font-size:11px;color:var(--muted)">${step.sub}</p>
+    </div>
+    ${customStep>=2?priceHint:''}
+    <div class="options">
+      ${step.options.map(o=>`
+        <div class="option ${customData[step.key]===o.l?'sel':''}" onclick="selectOpt('${step.key}','${o.l.replace(/'/g,"\\'")}',this)">
+          <div class="opt-img"><img src="${o.img}" alt="${o.l}" loading="lazy"></div>
+          <div class="opt-label">${o.l.replace(/\n/g,'<br>')}</div>
+        </div>
+      `).join('')}
+    </div>
+    ${customStep<5
+      ?`<button class="next-btn" id="nextBtn" onclick="nextCustomStep()" ${customData[step.key]?'':'disabled'}>Keyingi →</button>`
+      :`<button class="next-btn" id="nextBtn" onclick="finishCustom()" ${customData[step.key]?'':'disabled'}>Buyurtma berish ✓</button>`
+    }
+  `;
+}
+
+function selectOpt(key,val,el){
+  customData[key]=val;
+  document.querySelectorAll('.option').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('nextBtn').disabled=false;
+}
+
+function nextCustomStep(){
+  if(customStep<5){customStep++;renderCustomStep();}
+}
+
+function finishCustom(){
+  const kg = customData.qavat?.includes('1 qavat')?1.75:customData.qavat?.includes('2 qavat')?3.5:6;
+  const price = Math.round(kg*190000);
+  const num = orders.length+1;
+  orders.push({id:num,items:[{name:'Maxsus Tort',qty:1,price}],total:price,status:'new',date:new Date().toLocaleDateString('uz-UZ')});
+  if(tg?.sendData) tg.sendData(JSON.stringify({type:'custom_tort',...customData,price}));
+  renderOrders();
+  showHome();
+  switchTab(2);
+  showToast('Maxsus tort buyurtmangiz qabul qilindi!');
+}
+
+// TABS
+function switchTab(n){
+  document.getElementById('homePanel').style.display = n===0?'block':'none';
+  document.getElementById('customPanel').classList.remove('show');
+  ['cartPanel','ordersPanel','profilePanel'].forEach((id,i)=>{
+    document.getElementById(id).classList.toggle('show',i+1===n);
+  });
+  document.querySelectorAll('.nav .ni').forEach((el,i)=>el.classList.toggle('on',i===n));
+  if(n===1) renderCart();
+  if(n===2) renderOrders();
+  if(n===3){
+    renderFavGrid();
+    renderOrders();
+    if(tg?.initDataUnsafe?.user){
+      const u=tg.initDataUnsafe.user;
+      document.getElementById('profileName').textContent=u.first_name+(u.last_name?' '+u.last_name:'');
+      document.getElementById('piName').textContent=u.first_name+(u.last_name?' '+u.last_name:'');
+      document.getElementById('profileAvatar').textContent=(u.first_name[0]+(u.last_name?u.last_name[0]:'')).toUpperCase();
+    }
+  }
+}
+
+function switchProfileTab(n,el){
+  ['ptab0','ptab1','ptab2','ptab3'].forEach((id,i)=>{
+    document.getElementById(id).style.display=i===n?'block':'none';
+  });
+  document.querySelectorAll('.ptab').forEach((t,i)=>t.classList.toggle('on',i===n));
+  if(n===2) renderFavGrid();
+  if(n===1) renderOrders();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+renderFeat();
+renderGrid('all');
+</script>
+</body>
+</html>
